@@ -1,0 +1,18 @@
+[project]
+name = "libcal-scheduler"
+version = "0.1.0"
+description = "Interactive assistant for booking Chicago Public Library meeting rooms via LibCal"
+readme = "README.md"
+requires-python = ">=3.11"
+# Deliberately zero dependencies: urllib.request, html.parser, json, datetime, zoneinfo.
+dependencies = []
+
+[project.scripts]
+libcal-scheduler = "libcal_scheduler.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["libcal_scheduler"]

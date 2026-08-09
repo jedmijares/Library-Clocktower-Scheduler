@@ -1,0 +1,25 @@
+# Personal config: name, email, phone, address. Commit config.example.json instead.
+config.json
+
+# Booking audit logs (contain full request/response bodies)
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS cruft (repo lives on NTFS, so Windows entries matter here)
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,202 @@
+{
+  "_comment": "Copy to config.json and fill in. config.json is gitignored because it holds personal details.",
+
+  "event": {
+    "name": "Weekly Meetup",
+    "slots": {
+      "saturday": { "start": "11:30", "end": "16:30" },
+      "sunday": { "start": "13:30", "end": "16:30" }
+    },
+    "advanceDays": 90,
+    "_advanceDaysNote": "CPL guidelines say three months, but LibCal enforces exactly 90 days — probed 2026-08-09, where the last bookable day was today+90, two days short of three calendar months.",
+    "minLeadDays": 7
+  },
+
+  "requester": {
+    "_comment": "There is deliberately no zip field. Every branch's form asks only for a free-text Address (q10093) — put the zip in there. The input literally named 'Zip' on some branches is a honeypot, not a real field.",
+    "firstName": "",
+    "lastName": "",
+    "email": "",
+    "telephone": "",
+    "address": ""
+  },
+
+  "answers": {
+    "_comment": "Written once, semantically. Each room's fieldMap routes these to that branch's question ids.",
+    "_westLoopNote": "West Loop requires organization, speakers and pressMedia even for an Individual request — every other branch leaves them optional. Fill all three, or disable the west-loop room.",
+    "requestType": "Individual",
+    "organization": "",
+    "purpose": "Recurring community meetup, open to the public. All experience levels are welcome and newcomers are helped to join in. No entrance fee is charged, no collection is taken, and no purchase is required.",
+    "speakers": "None",
+    "pressMedia": "None",
+    "expectedAttendance": 20,
+    "involvesAnimalsCookingMedicalPhysical": "No"
+  },
+
+  "acknowledgements": {
+    "autoCheck": true,
+    "_comment": "Pre-ticks the 'I understand.' question checkboxes, which are shown on the review screen before you confirm."
+  },
+
+  "fieldMaps": {
+    "_comment": "Verified live 2026-08-09 across all seven rooms. Six of seven branches share 'standard'; only West Loop differs, by defining new question ids that duplicate the optional ones as required.",
+
+    "standard": {
+      "_branches": "Lincoln Park, Merlo, Bezazian, Rogers Park, Uptown, Edgewater",
+      "fields": {
+        "telephone": "q10094",
+        "address": "q10093",
+        "requestType": "q10092",
+        "organization": "q10095",
+        "purpose": "q10096",
+        "speakers": "q10097",
+        "pressMedia": "q10098",
+        "expectedAttendance": "q10099",
+        "involvesAnimalsCookingMedicalPhysical": "q10100",
+        "acknowledgements": ["q29731[]", "q29746[]"]
+      },
+      "required": [
+        "telephone",
+        "address",
+        "requestType",
+        "purpose",
+        "expectedAttendance",
+        "involvesAnimalsCookingMedicalPhysical"
+      ]
+    },
+
+    "west_loop": {
+      "_branches": "West Loop only",
+      "_note": "Requires organization, speakers and press answers that every other branch leaves optional, via separate q321xx ids. q18806 acknowledges the room being an open space with foot traffic.",
+      "fields": {
+        "telephone": "q10094",
+        "address": "q10093",
+        "requestType": "q10092",
+        "organization": ["q10095", "q32153"],
+        "purpose": "q10096",
+        "speakers": "q32154",
+        "pressMedia": "q32155",
+        "expectedAttendance": "q10099",
+        "involvesAnimalsCookingMedicalPhysical": "q10100",
+        "acknowledgements": ["q29731[]", "q29746[]", "q18806[]"]
+      },
+      "required": [
+        "telephone",
+        "address",
+        "requestType",
+        "organization",
+        "purpose",
+        "speakers",
+        "pressMedia",
+        "expectedAttendance",
+        "involvesAnimalsCookingMedicalPhysical"
+      ]
+    }
+  },
+
+  "rooms": [
+    {
+      "id": "lincoln-park",
+      "branch": "Lincoln Park",
+      "room": "Large Meeting Room",
+      "capacity": 80,
+      "enabled": true,
+      "lid": 9234,
+      "gid": 16895,
+      "eid": 65898,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09",
+      "notes": "Tables, chairs, lectern, screen, ceiling-mounted projector."
+    },
+    {
+      "id": "bezazian",
+      "branch": "Bezazian",
+      "room": "Meeting Room",
+      "capacity": 65,
+      "enabled": true,
+      "lid": 9208,
+      "gid": 16884,
+      "eid": 65884,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09",
+      "notes": "10 tables and 65 chairs, lectern, screen, sink. Best table provision on the roster."
+    },
+    {
+      "id": "uptown",
+      "branch": "Uptown",
+      "room": "Community Room",
+      "capacity": 50,
+      "enabled": true,
+      "lid": 9264,
+      "gid": 16904,
+      "eid": 65913,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09",
+      "notes": "Eight tables, 50 chairs, lectern."
+    },
+    {
+      "id": "merlo",
+      "branch": "Merlo",
+      "room": "Meeting Room",
+      "capacity": 46,
+      "enabled": true,
+      "lid": 9242,
+      "gid": 16874,
+      "eid": 65864,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09"
+    },
+    {
+      "id": "rogers-park",
+      "branch": "Rogers Park",
+      "room": "Community Room",
+      "capacity": 40,
+      "enabled": true,
+      "lid": 9255,
+      "gid": 16903,
+      "eid": 65911,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09",
+      "notes": "20' x 35', eight tables, 40 chairs, screen, sink."
+    },
+    {
+      "id": "west-loop",
+      "branch": "West Loop",
+      "room": "Meeting Room",
+      "capacity": 80,
+      "enabled": true,
+      "lid": 9271,
+      "gid": 16970,
+      "eid": 66010,
+      "fieldMap": "west_loop",
+      "fieldMapVerified": "2026-08-09",
+      "warn": "Not enclosed — an open space surrounded by study rooms, with foot traffic through it."
+    },
+    {
+      "id": "edgewater-a",
+      "branch": "Edgewater",
+      "room": "Meeting Room A",
+      "capacity": 35,
+      "enabled": true,
+      "lid": 9220,
+      "gid": 16900,
+      "eid": 65906,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09",
+      "warn": "Capacity is theater style — 'fewer if tables are used', so seated-at-tables capacity is lower. Also heavily booked."
+    },
+    {
+      "id": "edgewater-b",
+      "branch": "Edgewater",
+      "room": "Meeting Room B",
+      "capacity": 45,
+      "enabled": true,
+      "lid": 9220,
+      "gid": 16900,
+      "eid": 65907,
+      "fieldMap": "standard",
+      "fieldMapVerified": "2026-08-09",
+      "warn": "Capacity is theater style — 'fewer if tables are used'. Has a projector screen and sink. Also heavily booked."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "LibCal Scheduler",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "node",
+  "hostRequirements": {
+    "gpu": false
+  },
+  "mounts": [
+    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume"
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+  },
+  "remoteEnv": {
+    "TERM": "xterm-256color",
+    "COLORTERM": "truecolor"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": []
+    }
+  }
+}
