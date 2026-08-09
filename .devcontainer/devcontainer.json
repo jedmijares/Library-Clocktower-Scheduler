@@ -8,7 +8,8 @@
     "gpu": false
   },
   "mounts": [
-    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume"
+    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=gh-config-${devcontainerId},target=/home/node/.config/gh,type=volume"
   ],
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/home/node/.claude"

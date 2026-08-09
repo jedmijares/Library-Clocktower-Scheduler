@@ -11,12 +11,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # language runtime, CLI, or build tool) - see Factory-Game's Dockerfile for
 # an example of layering a project-specific binary (Godot) on this same base.
 
+# GitHub CLI. `gh auth login --web` uses a device flow, so pushing from inside the
+# container never requires a token to be pasted anywhere. Installed from the release
+# tarball rather than apt, which would mean trusting a third-party repo and key for a
+# single static binary. Pinned rather than "latest" so rebuilds are reproducible.
+ARG GH_VERSION=2.97.0
+RUN wget -q "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" -O /tmp/gh.tgz \
+    && tar -xzf /tmp/gh.tgz -C /tmp \
+    && install -m755 "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
+    && rm -rf /tmp/gh.tgz "/tmp/gh_${GH_VERSION}_linux_amd64" \
+    && gh --version
+
 # Ensure default node user has access to /usr/local/share for global npm installs
 RUN mkdir -p /usr/local/share/npm-global && chown -R node:node /usr/local/share
 
 # Pre-create and own the .claude config dir so the node user can write into it
 # once devcontainer.json's volume mount lands on top of this path.
 RUN mkdir -p /home/node/.claude && chown -R node:node /home/node/.claude
+
+# Same treatment for gh's config dir, which devcontainer.json mounts a volume onto so
+# the GitHub login survives rebuilds. Without the mount the token lives in the container
+# layer and is lost every time the image is rebuilt.
+RUN mkdir -p /home/node/.config/gh && chown -R node:node /home/node/.config
 
 # Windows Terminal sends Ctrl+Backspace as BS (\C-h), distinct from plain
 # Backspace's DEL - bash's default readline map doesn't bind BS to word
