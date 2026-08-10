@@ -198,20 +198,14 @@ class EventWindow(unittest.TestCase):
         cfg["answers"]["organization"] = ""
         self.assertTrue(any(p.startswith("answers.organization:") for p in problems_of(cfg)))
 
-    def test_west_loop_required_answers_must_be_present(self):
-        cfg = good_config()
-        cfg["answers"]["speakers"] = ""
-        found = problems_of(cfg)
-        self.assertTrue(
-            any("answers.speakers" in p and "West Loop" in p for p in found),
-            "West Loop requires speakers, so an empty answer should be reported:\n"
-            + "\n".join(found),
-        )
+    def test_a_branch_specific_answer_gap_is_not_a_config_error(self):
+        """West Loop needs `speakers`; the others do not.
 
-    def test_removing_west_loop_makes_its_required_answers_optional(self):
+        Which room is being booked is not known at load time, so this is enforced in
+        guardrails instead — see test_guardrails.RequiredAnswers.
+        """
         cfg = good_config()
         cfg["answers"]["speakers"] = ""
-        cfg["rooms"] = [r for r in cfg["rooms"] if r["id"] != "west-loop"]
         self.assertEqual(problems_of(cfg), [])
 
 

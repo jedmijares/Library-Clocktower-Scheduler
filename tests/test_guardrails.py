@@ -47,6 +47,7 @@ def run(**overrides):
         config=cfg,
         bookings=overrides.pop("bookings", []),
         now=overrides.pop("now", NOW),
+        window_overridden=overrides.pop("window_overridden", False),
     )
 
 
@@ -64,10 +65,28 @@ class Refusals(unittest.TestCase):
         self.assertFalse(verdict.ok)
         self.assertTrue(any("Wednesday" in r for r in verdict.refusals))
 
-    def test_a_window_that_does_not_match_config_is_refused(self):
+    def test_an_unexpected_window_is_refused(self):
+        """Without --window, a mismatch means something computed the wrong window."""
         wrong = Window(day=date(2026, 11, 7), start="09:30", end="16:30")
         verdict = run(window=wrong)
-        self.assertTrue(any("does not match the configured" in r for r in verdict.refusals))
+        self.assertFalse(verdict.ok)
+        self.assertTrue(any("differs from the configured" in r for r in verdict.refusals))
+
+    def test_an_explicitly_overridden_window_warns_instead(self):
+        """`--window 12:00-16:30` is a deliberate one-off, so it is surfaced not blocked."""
+        wrong = Window(day=date(2026, 11, 7), start="12:00", end="16:30")
+        verdict = run(window=wrong, window_overridden=True)
+        self.assertTrue(verdict.ok, verdict.refusals)
+        self.assertTrue(any("differs from the configured" in w for w in verdict.warnings))
+
+    def test_an_override_still_has_to_be_available(self):
+        wrong = Window(day=date(2026, 11, 7), start="12:00", end="16:30")
+        verdict = run(
+            window=wrong,
+            window_overridden=True,
+            availability=Availability(status=PARTIAL, free=("12:00pm–2:00pm",)),
+        )
+        self.assertFalse(verdict.ok, "an override does not bypass the availability check")
 
     def test_a_date_beyond_the_three_month_window_is_refused(self):
         verdict = run(window=Window(day=date(2026, 11, 14), start="11:30", end="16:30"))
@@ -131,6 +150,39 @@ class Refusals(unittest.TestCase):
             bookings=[booking("2026-11-04")],
         )
         self.assertGreaterEqual(len(verdict.refusals), 3)
+
+
+class RequiredAnswers(unittest.TestCase):
+    """Branch-specific answer requirements, refused before any hold is created."""
+
+    def _config_with(self, **answers):
+        cfg = config()
+        object.__setattr__(cfg, "answers", dict(cfg.answers, **answers))
+        return cfg
+
+    def test_west_loop_refuses_without_an_organization(self):
+        cfg = self._config_with(organization="")
+        verdict = run(config=cfg, room=cfg.room("west-loop"))
+        self.assertFalse(verdict.ok)
+        self.assertTrue(any("west" in r.lower() and "organization" in r for r in verdict.refusals))
+
+    def test_the_same_gap_does_not_block_a_standard_branch(self):
+        cfg = self._config_with(organization="")
+        verdict = run(config=cfg, room=cfg.room("merlo"))
+        self.assertTrue(verdict.ok, verdict.refusals)
+
+    def test_west_loop_also_needs_speakers_and_press(self):
+        for key in ("speakers", "pressMedia"):
+            cfg = self._config_with(**{key: ""})
+            verdict = run(config=cfg, room=cfg.room("west-loop"))
+            self.assertTrue(any(key in r for r in verdict.refusals), key)
+            self.assertTrue(run(config=cfg, room=cfg.room("merlo")).ok, f"{key} optional at Merlo")
+
+    def test_purpose_is_required_everywhere(self):
+        cfg = self._config_with(purpose="")
+        for room_id in ("merlo", "west-loop", "bezazian"):
+            verdict = run(config=cfg, room=cfg.room(room_id))
+            self.assertTrue(any("purpose" in r for r in verdict.refusals), room_id)
 
 
 class Warnings(unittest.TestCase):

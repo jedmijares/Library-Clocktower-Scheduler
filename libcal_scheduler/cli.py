@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -29,8 +30,26 @@ from .http import Client, HttpError
 LOG_DIR = Path("logs")
 
 
+WINDOW_RE = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)\s*-\s*([01]?\d|2[0-3]):([0-5]\d)$")
+
+
+def _parse_window_override(raw: str | None) -> tuple[str, str] | None:
+    """Parse `--window 12:00-16:30` into normalised HH:MM bounds."""
+    if not raw:
+        return None
+    match = WINDOW_RE.match(raw.strip())
+    if match is None:
+        raise SystemExit(f"--window {raw!r} is not HH:MM-HH:MM (e.g. 12:00-16:30)")
+    start = f"{int(match.group(1)):02d}:{match.group(2)}"
+    end = f"{int(match.group(3)):02d}:{match.group(4)}"
+    if end <= start:
+        raise SystemExit(f"--window {raw!r}: end must be after start")
+    return start, end
+
+
 def _resolve_windows(config: Config, args) -> list[Window]:
     today = now().astimezone(CHICAGO).date()
+    override = _parse_window_override(getattr(args, "window", None))
     if args.date:
         windows = []
         for raw in args.date:
@@ -45,10 +64,19 @@ def _resolve_windows(config: Config, args) -> list[Window]:
                     f"{' and '.join(sorted(k.title() for k in config.slots))} are configured"
                 )
             windows.append(window)
-        return windows
+        return _apply_override(windows, override)
     if args.weekends:
-        return weekend_windows(today, config.slots, config.advance_days, args.weekends)
-    return horizon_windows(today, config.slots, config.advance_days)
+        found = weekend_windows(today, config.slots, config.advance_days, args.weekends)
+    else:
+        found = horizon_windows(today, config.slots, config.advance_days)
+    return _apply_override(found, override)
+
+
+def _apply_override(windows: list[Window], override: tuple[str, str] | None) -> list[Window]:
+    if override is None:
+        return windows
+    start, end = override
+    return [Window(day=w.day, start=start, end=end) for w in windows]
 
 
 def _rooms_for(config: Config, only: str | None) -> list[Room]:
@@ -190,6 +218,7 @@ def cmd_book(config: Config, args) -> int:
         config=config,
         bookings=bookings,
         now=now(),
+        window_overridden=_parse_window_override(getattr(args, "window", None)) is not None,
     )
     if not verdict.ok:
         print()
@@ -346,6 +375,10 @@ def build_parser() -> argparse.ArgumentParser:
             help="the last N bookable weekends instead of just the horizon",
         )
         target.add_argument("--room", metavar="ID", help="restrict to one roster room id")
+        target.add_argument(
+            "--window", metavar="HH:MM-HH:MM",
+            help="override the configured slot times for this run, e.g. 12:00-16:30",
+        )
 
     check = sub.add_parser("check", help="read-only availability; creates no holds")
     add_target_args(check)

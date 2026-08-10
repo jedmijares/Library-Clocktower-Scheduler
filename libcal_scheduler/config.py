@@ -372,30 +372,10 @@ def validate(raw: object, *, strict: bool = True) -> Config:
     maps = _validate_field_maps(data.get("fieldMaps"), problems)
     rooms = _validate_rooms(data.get("rooms"), maps, attendance, problems)
 
-    # Every enabled room's required answers must actually have values. Semantic keys
-    # span both config sections, so check against the merged view rather than `answers`
-    # alone. Report each missing key once, naming the branches that need it, rather
-    # than once per room.
-    merged = {**answers, **{k: requester.get(k, "") for k in SEMANTIC_FROM_REQUESTER}}
-    needed_by: dict[str, list[str]] = {}
-    for room in rooms:
-        if not room.enabled:
-            continue
-        for key in room.field_map.required:
-            if key == "acknowledgements":
-                continue
-            value = merged.get(key)
-            if value is None or (isinstance(value, str) and not value.strip()):
-                needed_by.setdefault(key, []).append(room.branch)
-    for key, branches in needed_by.items():
-        section = "requester" if key in SEMANTIC_FROM_REQUESTER else "answers"
-        # Requester gaps are already reported field-by-field above; don't duplicate.
-        if section == "requester":
-            continue
-        unique = sorted(set(branches))
-        gaps.append(
-            f"answers.{key}: empty, but required by {', '.join(unique)}"
-        )
+    # Deliberately NOT checked here: whether each enabled room's required answers have
+    # values. That depends on which room is being booked — West Loop needs an
+    # organization the others do not — so it belongs in guardrails, which knows the
+    # choice and can refuse before any hold is created.
 
     if strict:
         problems.extend(gaps)

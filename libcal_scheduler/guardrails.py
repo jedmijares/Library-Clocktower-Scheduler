@@ -41,6 +41,7 @@ def check(
     config: Config,
     bookings: list[Booking],
     now: datetime,
+    window_overridden: bool = False,
 ) -> Verdict:
     refusals: list[str] = []
     warnings: list[str] = []
@@ -54,10 +55,14 @@ def check(
             f"{' and '.join(sorted(k.title() for k in config.slots))} are configured"
         )
     elif (slot.start, slot.end) != (window.start, window.end):
-        refusals.append(
-            f"window {window.start}–{window.end} does not match the configured "
+        # An explicit --window is a deliberate one-off, so it is surfaced rather than
+        # blocked. Without the flag a mismatch means something computed the wrong
+        # window, which is worth refusing over.
+        message = (
+            f"window {window.start}–{window.end} differs from the configured "
             f"{window.weekday_name} slot {slot.start}–{slot.end}"
         )
+        (warnings if window_overridden else refusals).append(message)
 
     # --- CPL would accept it ------------------------------------------------
     verdict = bookability(window.day, today, config.advance_days, config.min_lead_days)
@@ -71,6 +76,20 @@ def check(
         refusals.append(
             f"{room.label} has an unverified field map — run `discover` before booking it"
         )
+
+    # Answers this branch requires must actually have values. Checked here rather than
+    # at config load because it is room-specific: West Loop requires an organization,
+    # speakers and press answers that every other branch leaves optional.
+    values = config.values
+    for key in room.field_map.required:
+        if key == "acknowledgements":
+            continue
+        value = values.get(key)
+        if value is None or (isinstance(value, str) and not value.strip()):
+            section = "requester" if key in ("telephone", "address") else "answers"
+            refusals.append(
+                f"{section}.{key} is empty, but {room.branch} requires it"
+            )
 
     attendance = config.answers.get("expectedAttendance")
     if isinstance(attendance, int) and attendance > room.capacity:
