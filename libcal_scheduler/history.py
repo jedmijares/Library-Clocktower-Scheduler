@@ -25,6 +25,7 @@ class Booking:
     start: str  # "HH:MM"
     end: str
     booked_at: str  # ISO timestamp, Chicago
+    book_id: str = ""  # LibCal's own reference, e.g. "8aef0140aefa"
     confirmation: str = ""
 
     @property
@@ -53,6 +54,7 @@ def load(path: str | Path = DEFAULT_PATH) -> list[Booking]:
                     start=raw.get("start", ""),
                     end=raw.get("end", ""),
                     booked_at=raw.get("booked_at", ""),
+                    book_id=raw.get("book_id", ""),
                     confirmation=raw.get("confirmation", ""),
                 )
             )

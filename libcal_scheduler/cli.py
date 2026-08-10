@@ -275,7 +275,7 @@ def cmd_book(config: Config, args) -> int:
         return 1
 
     try:
-        confirmation = reserver.submit(room, pending, form, payload)
+        book_id, confirmation = reserver.submit(room, pending, form, payload)
     except (HttpError, BookingRefused) as err:
         print(f"  ✗ {err}")
         _write_log(reserver)
@@ -290,12 +290,15 @@ def cmd_book(config: Config, args) -> int:
             start=window.start,
             end=window.end,
             booked_at=history_mod.stamp(now()),
+            book_id=book_id,
             confirmation=" ".join(confirmation.split())[:200],
         ),
         args.history,
     )
     print()
     print(f"Submitted. {room.label} on {window.label()}")
+    if book_id:
+        print(f"LibCal booking id: {book_id}")
     print("CPL approves meeting room requests within three days; watch for their email.")
     _write_log(reserver)
     return 0
@@ -323,12 +326,12 @@ def cmd_history(config: Config, args) -> int:
     if not bookings:
         print("No bookings recorded yet.")
         return 0
-    print(f"{'Date':<14}{'Branch':<18}{'Room':<24}{'Window':<16}Booked at")
+    print(f"{'Date':<14}{'Branch':<18}{'Room':<24}{'Window':<16}LibCal id")
     print("-" * 92)
     for booking in bookings:
         print(
             f"{booking.day:<14}{booking.branch[:17]:<18}{booking.room[:23]:<24}"
-            f"{booking.start}–{booking.end:<10}{booking.booked_at}"
+            f"{booking.start}–{booking.end:<10}{booking.book_id or '-'}"
         )
     counts = history_mod.usage_counts(bookings, window=5)
     print()

@@ -246,8 +246,15 @@ class Reserver:
         return form
 
     # -- step 5 ------------------------------------------------------------
-    def submit(self, room: Room, pending: Pending, form: BookingForm, fields: dict) -> str:
-        """Submit the reservation. Returns LibCal's confirmation HTML."""
+    def submit(
+        self, room: Room, pending: Pending, form: BookingForm, fields: dict
+    ) -> tuple[str, str]:
+        """Submit the reservation.
+
+        Returns `(book_id, confirmation_html)`. The id is LibCal's own reference for the
+        booking and the only handle for looking it up or cancelling later, so it is worth
+        keeping even though the confirmation text is what a human reads.
+        """
         payload = {
             **fields,
             "session": form.session,
@@ -259,7 +266,7 @@ class Reserver:
         result = self.http.post_json(BOOK, payload, referer_lid=room.lid)
         if result.get("error"):
             raise BookingRefused(str(result["error"]))
-        return str(result.get("html", ""))
+        return str(result.get("bookId", "")), str(result.get("html", ""))
 
     # -- cleanup -----------------------------------------------------------
     def release(self, room: Room, window: Window, pending: Pending) -> bool:
