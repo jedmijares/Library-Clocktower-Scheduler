@@ -201,3 +201,36 @@ class FreeRanges(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LeadWindow(unittest.TestCase):
+    """LibCal withdraws all slots inside the minimum-lead window.
+
+    Verified 2026-08-11: the earliest date offering slots was exactly today+7, and a
+    fixture captured on 2026-08-08 shows the same date (Aug 15) with a full 14 slots
+    when it was still 7 days out. So an empty day is ambiguous — either the branch is
+    closed or the date is too soon — and only the caller knows which.
+    """
+
+    def test_a_day_with_no_slots_is_reported_as_closed_not_open(self):
+        result = evaluate({}, window("2026-08-15", SAT))
+        self.assertEqual(result.status, CLOSED)
+        self.assertFalse(result.is_open)
+        self.assertEqual(result.free, ())
+
+    def test_the_fixtures_prove_the_date_itself_was_not_closed(self):
+        """Both fixtures captured 2026-08-08 show Aug 15 with a full 14-slot day.
+
+        On 2026-08-11 the same date returned zero slots for every room. Nothing about
+        the branches changed — the date had simply moved inside the lead window.
+        """
+        for name, eid in (("lincoln_park_aug", 65898), ("merlo_aug", 65864)):
+            slots = parse(load(name), eid)["2026-08-15"]
+            self.assertEqual(len(slots), 14, f"{name}: Aug 15 was a normal open day")
+
+    def test_merlo_aug_15_was_open_but_almost_entirely_booked(self):
+        """Only 09:30 was free, so the 11:30-16:30 window was never achievable."""
+        slots = parse(load("merlo_aug"), 65864)["2026-08-15"]
+        free = sorted(t for t, state in slots.items() if state == AVAILABLE)
+        self.assertEqual(free, ["09:30"])
+        self.assertEqual(evaluate(slots, window("2026-08-15", SAT)).status, PARTIAL)

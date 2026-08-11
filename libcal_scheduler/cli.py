@@ -147,8 +147,11 @@ def cmd_check(config: Config, args) -> int:
 
     print(review_mod.header(config, now(), horizon(today, config.advance_days)))
     print()
+    unbookable = set()
     for window in windows:
         verdict = bookability(window.day, today, config.advance_days, config.min_lead_days)
+        if not verdict.ok:
+            unbookable.add(window.day)
         note = "" if verdict.ok else f"   (not bookable: {verdict.reason})"
         print(f"Target   {window.label()}{note}")
     print()
@@ -158,7 +161,14 @@ def cmd_check(config: Config, args) -> int:
     reserver = Reserver(Client())
     rows, _ = _sweep(reserver, rooms, windows)
     print()
-    print(review_mod.availability_table(rows, windows, bookings))
+    print(review_mod.availability_table(rows, windows, bookings, unbookable))
+    if unbookable:
+        print()
+        print(
+            "  – too soon = inside CPL's "
+            f"{config.min_lead_days}-day minimum; LibCal withdraws every slot, so"
+        )
+        print("             availability cannot be read for those dates either.")
     return 0
 
 

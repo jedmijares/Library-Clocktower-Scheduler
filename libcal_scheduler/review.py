@@ -17,13 +17,15 @@ from .history import Booking, recent, usage_counts
 MARK = {OPEN: "✓ open", PARTIAL: "~", "booked": "✗ booked", "closed": "closed"}
 
 
-def _status_cell(availability: Availability, width: int = 15) -> str:
+def _status_cell(availability: Availability, width: int = 15, *, too_soon: bool = False) -> str:
     if availability.status == OPEN:
         return "✓ open".ljust(width)
     if availability.status == PARTIAL:
         return f"~ {availability.free[0] if availability.free else 'partial'}".ljust(width)
     if availability.status == "closed":
-        return "closed".ljust(width)
+        # LibCal withdraws every slot for a date inside the minimum-lead window, which is
+        # indistinguishable from a branch being shut unless the caller tells us which it is.
+        return ("– too soon" if too_soon else "closed").ljust(width)
     return "✗ booked".ljust(width)
 
 
@@ -47,6 +49,7 @@ def availability_table(
     rows: list[tuple[Room, dict[str, Availability]]],
     windows: list[Window],
     bookings: list[Booking],
+    unbookable: set | None = None,
 ) -> str:
     """One row per room, one column per target date."""
     counts = usage_counts(bookings, window=5)
@@ -56,10 +59,15 @@ def availability_table(
     head += "Recent use"
     out = [head, "  " + "-" * (len(head) - 2)]
 
+    too_soon_days = unbookable or set()
     for index, (room, by_day) in enumerate(rows, start=1):
         line = f"  {index:<3}{room.label[:29]:<30}{room.capacity:<6}"
         for window in windows:
-            line += _status_cell(by_day.get(window.day.isoformat(), Availability("closed")), 17)
+            line += _status_cell(
+                by_day.get(window.day.isoformat(), Availability("closed")),
+                17,
+                too_soon=window.day in too_soon_days,
+            )
         used = counts.get(room.id, 0)
         line += f"{used} of last 5"
         if room.field_map_verified is None:
