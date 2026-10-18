@@ -59,7 +59,7 @@ class HappyPath(unittest.TestCase):
 
 
 class Refusals(unittest.TestCase):
-    def test_a_weekday_target_is_refused(self):
+    def test_an_unconfigured_weekday_target_is_refused(self):
         wednesday = Window(day=date(2026, 11, 4), start="11:30", end="16:30")
         verdict = run(window=wednesday)
         self.assertFalse(verdict.ok)

@@ -24,7 +24,7 @@ branch leaves those optional.
 ## Use
 
 ```bash
-python3 -m libcal_scheduler.cli                      # check: the furthest bookable Sat and Sun
+python3 -m libcal_scheduler.cli                      # check: the furthest bookable date for each configured day
 python3 -m libcal_scheduler.cli check --weekends 3   # the next 3 bookable weekends
 python3 -m libcal_scheduler.cli check --date 2026-11-07
 python3 -m libcal_scheduler.cli check --room bezazian

@@ -21,7 +21,10 @@ CHICAGO = ZoneInfo("America/Chicago")
 SATURDAY = 5  # date.weekday(): Monday is 0
 SUNDAY = 6
 
-_DAY_KEY = {SATURDAY: "saturday", SUNDAY: "sunday"}
+_DAY_KEY = {
+    0: "monday", 1: "tuesday", 2: "wednesday", 3: "thursday",
+    4: "friday", SATURDAY: "saturday", SUNDAY: "sunday",
+}
 
 
 def now() -> datetime:
@@ -113,17 +116,17 @@ def horizon(reference: date, advance_days: int) -> date:
 
 
 def horizon_windows(reference: date, slots: dict, advance_days: int) -> list[Window]:
-    """The furthest-out bookable Saturday and Sunday.
+    """The furthest-out bookable date for each configured day of the week.
 
-    These are **not always the same weekend**. With a Monday horizon they are that
-    weekend's Saturday and Sunday; with a Saturday horizon the Saturday is the
-    horizon itself and the Sunday is six days earlier. Callers must therefore treat
-    them as two independent dates, never as a pair.
+    These are **not always the same week**. With a Monday horizon the Saturday and
+    Sunday are that weekend's; with a Saturday horizon the Saturday is the horizon
+    itself and the Sunday is six days earlier. Callers must therefore treat them as
+    independent dates, never as a group.
     """
     edge = horizon(reference, advance_days)
     windows = []
-    for weekday in (SATURDAY, SUNDAY):
-        slot = slots.get(_DAY_KEY[weekday])
+    for weekday, key in _DAY_KEY.items():
+        slot = slots.get(key)
         if slot is None:
             continue
         windows.append(
@@ -133,7 +136,7 @@ def horizon_windows(reference: date, slots: dict, advance_days: int) -> list[Win
 
 
 def window_for(day: date, slots: dict) -> Window | None:
-    """The configured window for a given date, or None if it is not a Sat/Sun."""
+    """The configured window for a given date, or None if that weekday has no configured slot."""
     slot = slots.get(_DAY_KEY.get(day.weekday(), ""))
     return None if slot is None else Window(day=day, start=slot.start, end=slot.end)
 

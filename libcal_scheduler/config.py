@@ -37,6 +37,7 @@ SEMANTIC_FROM_REQUESTER = ("telephone", "address")
 # It is NOT a denylist the submitter relies on — the names rotate per branch.
 KNOWN_HONEYPOT_NAMES = frozenset({"Zip", "Feedback", "Name", "Question", "URL"})
 
+WEEKDAY_KEYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -96,7 +97,7 @@ class Slot:
 @dataclass(frozen=True)
 class Config:
     event_name: str
-    slots: dict[str, Slot]  # "saturday" | "sunday"
+    slots: dict[str, Slot]  # "monday" .. "sunday"; only configured days are bookable
     advance_days: int
     min_lead_days: int
     requester: dict[str, str]
@@ -291,10 +292,17 @@ def validate(raw: object, *, strict: bool = True) -> Config:
         if not isinstance(raw_slots, dict):
             problems.append("event.slots: missing")
             raw_slots = {}
-        for day in ("saturday", "sunday"):
-            slot = raw_slots.get(day)
+        for day in raw_slots:
+            if day not in WEEKDAY_KEYS and not day.startswith("_"):
+                problems.append(f"event.slots.{day}: not a day of the week")
+        if not any(day in raw_slots for day in WEEKDAY_KEYS):
+            problems.append("event.slots: configure at least one day")
+        for day in WEEKDAY_KEYS:
+            if day not in raw_slots:
+                continue
+            slot = raw_slots[day]
             if not isinstance(slot, dict):
-                problems.append(f"event.slots.{day}: missing")
+                problems.append(f"event.slots.{day}: must be an object with start and end")
                 continue
             start, end = slot.get("start"), slot.get("end")
             bad = False

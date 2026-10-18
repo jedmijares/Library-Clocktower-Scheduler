@@ -144,8 +144,17 @@ class Timezone(unittest.TestCase):
 
 
 class WindowFor(unittest.TestCase):
-    def test_weekdays_have_no_configured_window(self):
+    def test_unconfigured_weekdays_have_no_window(self):
         self.assertIsNone(window_for(date(2026, 11, 4), SLOTS))  # Wednesday
+
+    def test_a_configured_weekday_gets_its_window(self):
+        slots = {**SLOTS, "wednesday": Slot(start="12:30", end="17:00")}
+        self.assertEqual(window_for(date(2026, 11, 4), slots).start, "12:30")
+
+    def test_horizon_windows_include_configured_weekdays(self):
+        slots = {**SLOTS, "wednesday": Slot(start="12:30", end="17:00")}
+        days = {w.day.strftime("%A") for w in horizon_windows(date(2026, 8, 9), slots, 92)}
+        self.assertEqual(days, {"Wednesday", "Saturday", "Sunday"})
 
     def test_saturday_and_sunday_pick_their_own_slots(self):
         self.assertEqual(window_for(date(2026, 11, 7), SLOTS).start, "11:30")
